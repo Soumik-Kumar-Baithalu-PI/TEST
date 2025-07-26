@@ -28,6 +28,8 @@ import MarketingServicesTask from "./MarketingServices/MarketingServicesTask";
 import { getSharePointItems, updateSharePointItem, } from "../Services/SharepointListServies";
 import { globalVariables, listURL } from "../Utils/globalVariable";
 import SCMForm from "./SCM/SCMForm";
+import WorkflowStages, { workflowStages, WorkflowStage } from "./WorkflowStages";
+import VendorSelectionModal from "./VendorSelectionModal";
 
 const { Option } = Select;
 const { Step } = Steps;
@@ -52,6 +54,9 @@ const ProductDetailsDrawer: React.FC<ProductDetailsDrawerProps> = ({
   const [productTypes, setProductTypes] = useState<string[]>([]);
   const [currentStage, setCurrentStage] = useState<number>(1);
   const [isOwner, setIsOwner] = useState<boolean>(false);
+  const [workflowData, setWorkflowData] = useState<WorkflowStage[]>(workflowStages);
+  const [vendorModalVisible, setVendorModalVisible] = useState(false);
+  const [userRole, setUserRole] = useState<string>('');
   // const [scmData, ] = useState<any>(null); // State to hold SCM data
 
   // New states for separate file categories
@@ -65,6 +70,7 @@ const ProductDetailsDrawer: React.FC<ProductDetailsDrawerProps> = ({
 
   const steps = [
     { title: "Product Details" },
+    { title: "Workflow Management" },
     { title: "PM, CM Task" },
     ...(form.getFieldValue("status") === "MOP File Approved" ? [{ title: "QC Task" }] : []),
     ...(isFaicaApproved  ? [{ title: "Marketing Services" }] : []),
@@ -74,8 +80,25 @@ const ProductDetailsDrawer: React.FC<ProductDetailsDrawerProps> = ({
 
   // Check user group and FAICA approval
   useEffect(() => {
-    const checkFaicaApproved = async (): Promise<void> => {
+    const checkUserRoleAndFaica = async (): Promise<void> => {
       if (!itemId) return;
+      
+      // Check user groups to determine role
+      try {
+        const groups = await sp.web.currentUser.groups();
+        const groupTitles = groups.map(group => group.Title);
+        
+        if (groupTitles.includes('Regulatory Member')) setUserRole('Regulatory');
+        else if (groupTitles.includes('PM_CM_Member')) setUserRole('Marketing');
+        else if (groupTitles.includes('QC_Member')) setUserRole('Quality');
+        else if (groupTitles.includes('MarketingHead_CEO_Approver')) setUserRole('Marketing Services');
+        else if (groupTitles.includes('Artwork Management System Owners')) setUserRole('Owner');
+        else setUserRole('User');
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+      
+      // Check FAICA approval
       const faicaFiles = await sp.web
         .getFolderByServerRelativeUrl("ArtworkLibrary/FAICA")
         .files.select("ListItemAllFields/DocID", "ListItemAllFields/Status")
@@ -86,8 +109,8 @@ const ProductDetailsDrawer: React.FC<ProductDetailsDrawerProps> = ({
     };
 
     if (visible) {
-      checkFaicaApproved().catch((error) =>
-        notification.error({ message: "Error", description: "Failed to check FAICA approval." })
+      checkUserRoleAndFaica().catch((error) =>
+        notification.error({ message: "Error", description: "Failed to check user role and FAICA approval." })
       );
     }
   }, [visible, itemId]);
@@ -416,16 +439,90 @@ const ProductDetailsDrawer: React.FC<ProductDetailsDrawerProps> = ({
     return hasBrandName && hasFGCode && hasBOM && hasFaicaFile && hasMopFile;
   }, [form, faicaFiles, mopFiles]);
 
+  // Workflow management functions
+  const handleStageUpdate = async (stageId: number, status: string, data?: any) => {
+    try {
+      const updatedStages = workflowData.map(stage => {
+        if (stage.id === stageId) {
+          return {
+            ...stage,
+            status: status as any,
+            ...(data?.startDate && { startDate: data.startDate }),
+            ...(data?.completedDate && { completedDate: data.completedDate })
+          };
+        }
+        return stage;
+      });
+      
+      setWorkflowData(updatedStages);
+      
+      // Update SharePoint
+      if (itemId) {
+        await sp.web.lists.getByTitle(globalVariables.listName_Artwork)
+          .items.getById(itemId)
+          .update({
+            [`Stage${stageId}Status`]: status,
+            [`Stage${stageId}UpdatedDate`]: new Date().toISOString(),
+            ...(status === 'Rejected' && { CurrentStage: Math.max(1, stageId - 1) }),
+            ...(status === 'Completed' && { CurrentStage: stageId + 1 })
+          });
+      }
+      
+      // Handle rejection - move to previous stage
+      if (status === 'Rejected' && stageId > 1) {
+        setCurrentStage(Math.max(1, stageId - 1));
+        notification.warning({
+          message: 'Stage Rejected',
+          description: 'The workflow has been moved to the previous stage for revision.'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating stage:', error);
+      notification.error({
+        message: 'Error',
+        description: 'Failed to update workflow stage.'
+      });
+    }
+  };
+
+  const handleVendorSelect = async (vendor: any, productId: number) => {
+    try {
+      // Update the product with vendor information
+      await sp.web.lists.getByTitle(globalVariables.listName_Artwork)
+        .items.getById(productId)
+        .update({
+          AssignedVendor: vendor.SupplierName,
+          VendorEmail: vendor.SupplierEmail,
+          VendorCategory: vendor.PackingMaterialCategory,
+          VendorAssignedDate: new Date().toISOString(),
+        });
+      
+      notification.success({
+        message: 'Vendor Assigned',
+        description: `${vendor.SupplierName} has been assigned to this product.`
+      });
+      
+      // Navigate to vendor dashboard would happen here in a real app
+      setVendorModalVisible(false);
+    } catch (error) {
+      console.error('Error assigning vendor:', error);
+      notification.error({
+        message: 'Error',
+        description: 'Failed to assign vendor to product.'
+      });
+    }
+  };
+
   // Automatically move to stage 3 if all PMCM requirements are met
   useEffect(() => {
-    if (currentStage === 2 && isPMCMComplete) {
-      setCurrentStage(3);
+    if (currentStage === 3 && isPMCMComplete) {
+      setCurrentStage(4);
       // Optionally update SharePoint as well
       if (itemId) {
         sp.web.lists.getByTitle(globalVariables.listName_Artwork)
           .items.getById(itemId)
-          .update({ CurrentStage: 3 })
-          .catch((error) => console.error("Error updating stage to 3:", error));
+          .update({ CurrentStage: 4 })
+          .catch((error) => console.error("Error updating stage to 4:", error));
       }
     }
   }, [isPMCMComplete, currentStage, itemId]);
@@ -625,8 +722,22 @@ const ProductDetailsDrawer: React.FC<ProductDetailsDrawerProps> = ({
         </Form>
       )}
 
-      {/* PM, CM Task Tab: Only FAICA and MOP Files */}
+      {/* Workflow Management Tab */}
       {currentStage === 2 && (
+        <WorkflowStages
+          productId={itemId || 0}
+          currentStage={currentStage}
+          stages={workflowData}
+          onStageUpdate={handleStageUpdate}
+          onVendorSelect={(vendorEmail, productId) => {
+            setVendorModalVisible(true);
+          }}
+          userRole={userRole}
+        />
+      )}
+
+      {/* PM, CM Task Tab: Only FAICA and MOP Files */}
+      {currentStage === 3 && (
         <PMCMTask
           currentStage={currentStage}
           isOwner={isOwner}
@@ -641,12 +752,12 @@ const ProductDetailsDrawer: React.FC<ProductDetailsDrawerProps> = ({
       )}
 
       {/* QC Task Tab */}
-      {currentStage === 3  && (
+      {currentStage === 4  && (
         <QCTask productId={itemId === null ? undefined : itemId} />
       )}
 
       {/* Marketing Services Task Tab */}
-      {currentStage === 4 && (
+      {currentStage === 5 && (
         <MarketingServicesTask
           productId={itemId === null ? undefined : itemId}
           onCDRSubmit={async () => {
@@ -673,7 +784,7 @@ const ProductDetailsDrawer: React.FC<ProductDetailsDrawerProps> = ({
       )}
 
       {/* SCM Task Tab */}
-      {currentStage === 5  && (
+      {currentStage === 6  && (
         <SCMForm
           initialValues={{
             productCategories: form.getFieldValue("BrandName"),
@@ -683,8 +794,17 @@ const ProductDetailsDrawer: React.FC<ProductDetailsDrawerProps> = ({
         />
       )}
 
-      {/* Transition Button: Only show if not owner, not at stage 3, and PMCM is not complete */}
-      {!isOwner && currentStage < 5 && !isPMCMComplete && (
+      {/* Vendor Selection Modal */}
+      <VendorSelectionModal
+        visible={vendorModalVisible}
+        onClose={() => setVendorModalVisible(false)}
+        onVendorSelect={handleVendorSelect}
+        productId={itemId || 0}
+        packingMaterialCategory={form.getFieldValue("packingMaterialCategory")}
+      />
+
+      {/* Transition Button: Only show if not owner, not at stage 4, and PMCM is not complete */}
+      {!isOwner && currentStage < 6 && !isPMCMComplete && (
         <Button
           type="primary"
           onClick={handleStageTransition}
