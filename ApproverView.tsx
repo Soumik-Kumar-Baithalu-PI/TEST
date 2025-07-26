@@ -23,49 +23,86 @@ const ApproverView: React.FC<ApproverViewProps> = ({ productId, currentUserRole,
   const [isFinalArtworkUploaded, setIsFinalArtworkUploaded] = useState<boolean>(false);
   const [finalArtworkFileUrl, setFinalArtworkFileUrl] = useState<string>("");
   const [finalArtworkStatus, setFinalArtworkStatus] = useState<string | null>(null);
+  
+  // Additional file types
+  const [isCibrcUploaded, setIsCibrcUploaded] = useState<boolean>(false);
+  const [cibrcFileUrl, setCibrcFileUrl] = useState<string>("");
+  const [cibrcStatus, setCibrcStatus] = useState<string | null>(null);
+  const [isEngineeringDrawingUploaded, setIsEngineeringDrawingUploaded] = useState<boolean>(false);
+  const [engineeringDrawingFileUrl, setEngineeringDrawingFileUrl] = useState<string>("");
+  const [engineeringDrawingStatus, setEngineeringDrawingStatus] = useState<string | null>(null);
+  const [isSpecificationUploaded, setIsSpecificationUploaded] = useState<boolean>(false);
+  const [specificationFileUrl, setSpecificationFileUrl] = useState<string>("");
+  const [specificationStatus, setSpecificationStatus] = useState<string | null>(null);
+  const [isCdrUploaded, setIsCdrUploaded] = useState<boolean>(false);
+  const [cdrFileUrl, setCdrFileUrl] = useState<string>("");
+  const [cdrStatus, setCdrStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFileStatus = async (): Promise<void> => {
         try {
             setLoading(true);
 
-            // Fetch from Final Artwork folder
-            const finalArtworkFiles = await sp.web
-                .getFolderByServerRelativeUrl("ArtworkLibrary/PackagingArtwork")
-                .files.select("Name", "ServerRelativeUrl", "ListItemAllFields/DocID", "ListItemAllFields/Status")
-                .expand("ListItemAllFields")
-                .filter(`ListItemAllFields/DocID eq ${productId}`)
-                .get();
+            // Helper function to safely fetch files from a folder
+            const safeFetchFiles = async (folderPath: string) => {
+                try {
+                    return await sp.web
+                        .getFolderByServerRelativeUrl(folderPath)
+                        .files.select("Name", "ServerRelativeUrl", "ListItemAllFields/DocID", "ListItemAllFields/Status")
+                        .expand("ListItemAllFields")
+                        .filter(`ListItemAllFields/DocID eq ${productId}`)
+                        .get();
+                } catch (error) {
+                    console.warn(`Could not fetch files from ${folderPath}:`, error);
+                    return [];
+                }
+            };
 
+            // Fetch from Final Artwork folder
+            const finalArtworkFiles = await safeFetchFiles("ArtworkLibrary/PackagingArtwork");
             setFinalArtworkStatus(finalArtworkFiles.length > 0 ? (finalArtworkFiles[0] as any).ListItemAllFields.Status : null);
             setIsFinalArtworkUploaded(finalArtworkFiles.length > 0);
             setFinalArtworkFileUrl(finalArtworkFiles.length > 0 ? finalArtworkFiles[0].ServerRelativeUrl : "");
 
             // Fetch from FAICA folder
-            const faicaFiles = await sp.web
-                .getFolderByServerRelativeUrl("ArtworkLibrary/FAICA")
-                .files.select("Name", "ServerRelativeUrl", "ListItemAllFields/DocID", "ListItemAllFields/Status")
-                .expand("ListItemAllFields")
-                .filter(`ListItemAllFields/DocID eq ${productId}`)
-                .get();
-
+            const faicaFiles = await safeFetchFiles("ArtworkLibrary/FAICA");
             setFaciaStatus(faicaFiles.length > 0 ? (faicaFiles[0] as any).ListItemAllFields.Status : null);
             setIsFaciaUploaded(faicaFiles.length > 0);
             setFaciaFileUrl(faicaFiles.length > 0 ? faicaFiles[0].ServerRelativeUrl : "");
 
             // Fetch from MOP folder
-            const mopFiles = await sp.web
-                .getFolderByServerRelativeUrl("ArtworkLibrary/MOP")
-                .files.select("Name", "ServerRelativeUrl", "ListItemAllFields/DocID", "ListItemAllFields/Status")
-                .expand("ListItemAllFields")
-                .filter(`ListItemAllFields/DocID eq ${productId}`)
-                .get();
-
+            const mopFiles = await safeFetchFiles("ArtworkLibrary/MOP");
             setMopStatus(mopFiles.length > 0 ? (mopFiles[0] as any).ListItemAllFields.Status : null);
             setIsMopUploaded(mopFiles.length > 0);
             setMopFileUrl(mopFiles.length > 0 ? mopFiles[0].ServerRelativeUrl : "");
+
+            // Fetch from CIBRC Files folder
+            const cibrcFiles = await safeFetchFiles("ArtworkLibrary/CIBRC Files");
+            setCibrcStatus(cibrcFiles.length > 0 ? (cibrcFiles[0] as any).ListItemAllFields.Status : null);
+            setIsCibrcUploaded(cibrcFiles.length > 0);
+            setCibrcFileUrl(cibrcFiles.length > 0 ? cibrcFiles[0].ServerRelativeUrl : "");
+
+            // Fetch from Engineering Drawing folder
+            const engineeringDrawingFiles = await safeFetchFiles("ArtworkLibrary/EngineeringDrawing");
+            setEngineeringDrawingStatus(engineeringDrawingFiles.length > 0 ? (engineeringDrawingFiles[0] as any).ListItemAllFields.Status : null);
+            setIsEngineeringDrawingUploaded(engineeringDrawingFiles.length > 0);
+            setEngineeringDrawingFileUrl(engineeringDrawingFiles.length > 0 ? engineeringDrawingFiles[0].ServerRelativeUrl : "");
+
+            // Fetch from Specification folder
+            const specificationFiles = await safeFetchFiles("ArtworkLibrary/Specification");
+            setSpecificationStatus(specificationFiles.length > 0 ? (specificationFiles[0] as any).ListItemAllFields.Status : null);
+            setIsSpecificationUploaded(specificationFiles.length > 0);
+            setSpecificationFileUrl(specificationFiles.length > 0 ? specificationFiles[0].ServerRelativeUrl : "");
+
+            // Fetch from CDR folder
+            const cdrFiles = await safeFetchFiles("ArtworkLibrary/CDR");
+            setCdrStatus(cdrFiles.length > 0 ? (cdrFiles[0] as any).ListItemAllFields.Status : null);
+            setIsCdrUploaded(cdrFiles.length > 0);
+            setCdrFileUrl(cdrFiles.length > 0 ? cdrFiles[0].ServerRelativeUrl : "");
         } catch (error) {
             console.error("Error fetching file status:", error);
+            // If there's an error fetching files, it might be because folders don't exist yet
+            // This is normal and expected, so we just log it and continue
         } finally {
             setLoading(false);
         }
@@ -74,7 +111,7 @@ const ApproverView: React.FC<ApproverViewProps> = ({ productId, currentUserRole,
     fetchFileStatus().catch((error) => console.error("Error in fetchFileStatus:", error));
   }, [productId, visible]); // Removed unnecessary dependencies
 
-  const handleApproval = async (type: "Facia" | "MOP" | "FinalArtwork", decision: "Approved" | "Rejected"): Promise<void> => {
+  const handleApproval = async (type: "Facia" | "MOP" | "FinalArtwork" | "CIBRC" | "EngineeringDrawing" | "Specification" | "CDR", decision: "Approved" | "Rejected"): Promise<void> => {
     try {
       const metadata: any = {};
       const currentUser = await sp.web.currentUser.get();
@@ -97,6 +134,26 @@ const ApproverView: React.FC<ApproverViewProps> = ({ productId, currentUserRole,
         if (decision === "Approved") {
           metadata.CurrentStage = 4; // Only increase stage if MOP is approved
         }
+      } else if (type === "CIBRC") {
+        metadata.CibrcApprovalStatus = decision;
+        metadata.CibrcApprovedBy = currentUser.Title;
+        metadata.Status = decision === "Approved" ? "CIBRC File Approved" : "CIBRC File Rejected";
+        metadata.RunWF = "Yes"; // Set RunWF to Yes
+      } else if (type === "EngineeringDrawing") {
+        metadata.EngineeringDrawingApprovalStatus = decision;
+        metadata.EngineeringDrawingApprovedBy = currentUser.Title;
+        metadata.Status = decision === "Approved" ? "Engineering Drawing File Approved" : "Engineering Drawing File Rejected";
+        metadata.RunWF = "Yes"; // Set RunWF to Yes
+      } else if (type === "Specification") {
+        metadata.SpecificationApprovalStatus = decision;
+        metadata.SpecificationApprovedBy = currentUser.Title;
+        metadata.Status = decision === "Approved" ? "Specification File Approved" : "Specification File Rejected";
+        metadata.RunWF = "Yes"; // Set RunWF to Yes
+      } else if (type === "CDR") {
+        metadata.CdrApprovalStatus = decision;
+        metadata.CdrApprovedBy = currentUser.Title;
+        metadata.Status = decision === "Approved" ? "CDR File Approved" : "CDR File Rejected";
+        metadata.RunWF = "Yes"; // Set RunWF to Yes
       }
 
       const listName = "Operational - Artwork Management Systems";
@@ -105,11 +162,19 @@ const ApproverView: React.FC<ApproverViewProps> = ({ productId, currentUserRole,
       // Update file status in the respective library
       let folderPath = "";
       if (type === "FinalArtwork") {
-        folderPath = "ArtworkLibrary/FinalArtwork";
+        folderPath = "ArtworkLibrary/PackagingArtwork";
       } else if (type === "Facia") {
         folderPath = "ArtworkLibrary/FAICA";
       } else if (type === "MOP") {
         folderPath = "ArtworkLibrary/MOP";
+      } else if (type === "CIBRC") {
+        folderPath = "ArtworkLibrary/CIBRC Files";
+      } else if (type === "EngineeringDrawing") {
+        folderPath = "ArtworkLibrary/EngineeringDrawing";
+      } else if (type === "Specification") {
+        folderPath = "ArtworkLibrary/Specification";
+      } else if (type === "CDR") {
+        folderPath = "ArtworkLibrary/CDR";
       }
       const files = await sp.web
         .getFolderByServerRelativeUrl(folderPath)
@@ -249,7 +314,152 @@ const ApproverView: React.FC<ApproverViewProps> = ({ productId, currentUserRole,
             </div>
           )}
 
-          {!isFaciaUploaded && !isMopUploaded && !isFinalArtworkUploaded && <p>No files available for approval.</p>}
+          {/* CIBRC Files Approval Section */}
+          {isCibrcUploaded && cibrcStatus !== "Approved" && (
+            <div style={{ marginBottom: "16px" }}>
+              <h3>CIBRC File</h3>
+              <a href={cibrcFileUrl} target="_blank" rel="noopener noreferrer">
+                View File
+              </a>
+              <div style={{ marginTop: "16px" }}>
+                <Button
+                  type="primary"
+                  onClick={() => handleApproval("CIBRC", "Approved")}
+                  style={{ marginRight: "8px" }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  type="danger"
+                  onClick={() => handleApproval("CIBRC", "Rejected")}
+                  style={{ marginRight: "8px" }}
+                >
+                  Reject
+                </Button>
+                <Input
+                  placeholder="Enter remark (required if rejected)"
+                  value={remark}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRemark(e.target.value)}
+                  style={{ marginTop: 8, width: 300 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Engineering Drawing Approval Section */}
+          {isEngineeringDrawingUploaded && engineeringDrawingStatus !== "Approved" && (
+            <div style={{ marginBottom: "16px" }}>
+              <h3>Engineering Drawing File</h3>
+              <a href={engineeringDrawingFileUrl} target="_blank" rel="noopener noreferrer">
+                View File
+              </a>
+              <div style={{ marginTop: "16px" }}>
+                <Button
+                  type="primary"
+                  onClick={() => handleApproval("EngineeringDrawing", "Approved")}
+                  style={{ marginRight: "8px" }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  type="danger"
+                  onClick={() => handleApproval("EngineeringDrawing", "Rejected")}
+                  style={{ marginRight: "8px" }}
+                >
+                  Reject
+                </Button>
+                <Input
+                  placeholder="Enter remark (required if rejected)"
+                  value={remark}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRemark(e.target.value)}
+                  style={{ marginTop: 8, width: 300 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Specification Approval Section */}
+          {isSpecificationUploaded && specificationStatus !== "Approved" && (
+            <div style={{ marginBottom: "16px" }}>
+              <h3>Specification File</h3>
+              <a href={specificationFileUrl} target="_blank" rel="noopener noreferrer">
+                View File
+              </a>
+              <div style={{ marginTop: "16px" }}>
+                <Button
+                  type="primary"
+                  onClick={() => handleApproval("Specification", "Approved")}
+                  style={{ marginRight: "8px" }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  type="danger"
+                  onClick={() => handleApproval("Specification", "Rejected")}
+                  style={{ marginRight: "8px" }}
+                >
+                  Reject
+                </Button>
+                <Input
+                  placeholder="Enter remark (required if rejected)"
+                  value={remark}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRemark(e.target.value)}
+                  style={{ marginTop: 8, width: 300 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* CDR Approval Section */}
+          {isCdrUploaded && cdrStatus !== "Approved" && (
+            <div style={{ marginBottom: "16px" }}>
+              <h3>CDR File</h3>
+              <a href={cdrFileUrl} target="_blank" rel="noopener noreferrer">
+                View File
+              </a>
+              <div style={{ marginTop: "16px" }}>
+                <Button
+                  type="primary"
+                  onClick={() => handleApproval("CDR", "Approved")}
+                  style={{ marginRight: "8px" }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  type="danger"
+                  onClick={() => handleApproval("CDR", "Rejected")}
+                  style={{ marginRight: "8px" }}
+                >
+                  Reject
+                </Button>
+                <Input
+                  placeholder="Enter remark (required if rejected)"
+                  value={remark}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRemark(e.target.value)}
+                  style={{ marginTop: 8, width: 300 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Show status of all file types */}
+          {!isFaciaUploaded && !isMopUploaded && !isFinalArtworkUploaded && !isCibrcUploaded && !isEngineeringDrawingUploaded && !isSpecificationUploaded && !isCdrUploaded && (
+            <div>
+              <p>No files are currently uploaded and available for approval.</p>
+              <div style={{ marginTop: "16px", padding: "12px", backgroundColor: "#f5f5f5", borderRadius: "4px" }}>
+                <h4>Expected File Types:</h4>
+                <ul style={{ marginBottom: 0 }}>
+                  <li>CIBRC Files</li>
+                  <li>FAICA Files</li>
+                  <li>MOP Files</li>
+                  <li>Final Artwork Files</li>
+                  <li>Engineering Drawing Files</li>
+                  <li>Specification Files</li>
+                  <li>CDR Files</li>
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Modal>
