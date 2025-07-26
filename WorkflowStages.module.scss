@@ -1,0 +1,251 @@
+.workflowContainer {
+  padding: 20px;
+  background: #f5f5f5;
+}
+
+.workflowCard {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.workflowHeader {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 8px 8px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.stageProgress {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.currentStageRow {
+  background-color: #e6f7ff !important;
+  border-left: 4px solid #1890ff;
+}
+
+.overdueBadge {
+  background-color: #ff4d4f;
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+.urgentBadge {
+  background-color: #fa8c16;
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+.completedBadge {
+  background-color: #52c41a;
+  color: white;
+}
+
+.pendingBadge {
+  background-color: #faad14;
+  color: white;
+}
+
+.rejectedBadge {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.actionButton {
+  margin-right: 8px;
+  margin-bottom: 4px;
+}
+
+.stageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.stageMetrics {
+  display: flex;
+  gap: 24px;
+}
+
+.metric {
+  text-align: center;
+}
+
+.metricValue {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1890ff;
+}
+
+.metricLabel {
+  color: #666;
+  font-size: 14px;
+}
+
+.vendorCard {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.vendorInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vendorDetails {
+  flex: 1;
+}
+
+.vendorName {
+  font-weight: bold;
+  font-size: 16px;
+  color: #389e0d;
+}
+
+.vendorEmail {
+  color: #666;
+  margin-top: 4px;
+}
+
+.vendorCategory {
+  margin-top: 8px;
+}
+
+.documentsList {
+  margin-top: 16px;
+}
+
+.documentItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.documentIcon {
+  margin-right: 8px;
+  color: #52c41a;
+}
+
+.escalationAlert {
+  background: #fff2e8;
+  border: 1px solid #ffbb96;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 8px 0;
+  color: #d46b08;
+}
+
+.escalationIcon {
+  margin-right: 8px;
+  color: #fa8c16;
+}
+
+.slaProgress {
+  margin-top: 8px;
+}
+
+.slaLabel {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.responsiblePerson {
+  font-weight: 500;
+  color: #1890ff;
+}
+
+.stageDescription {
+  color: #666;
+  font-size: 14px;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.workflowStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #f0f0f0;
+}
+
+.statIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.statLabel {
+  color: #666;
+  font-size: 14px;
+}
+
+.completedStat .statIcon {
+  color: #52c41a;
+}
+
+.completedStat .statValue {
+  color: #52c41a;
+}
+
+.pendingStat .statIcon {
+  color: #faad14;
+}
+
+.pendingStat .statValue {
+  color: #faad14;
+}
+
+.rejectedStat .statIcon {
+  color: #ff4d4f;
+}
+
+.rejectedStat .statValue {
+  color: #ff4d4f;
+}
+
+.inProgressStat .statIcon {
+  color: #1890ff;
+}
+
+.inProgressStat .statValue {
+  color: #1890ff;
+}
