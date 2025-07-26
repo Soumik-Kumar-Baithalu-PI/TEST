@@ -1,0 +1,85 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.artworkManagementSystem {
+  padding: 20px;
+
+  .dashboardTitle {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+
+  .actionBar {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+
+    .searchInput {
+      width: 300px;
+    }
+
+    .actionButtons {
+      button {
+        margin-right: 10px;
+
+        &:last-child {
+          margin-right: 0;
+        }
+      }
+
+      .inwardDashboardButton {
+        background-color: #ffd700;
+        border-color: #ffd700;
+      }
+    }
+  }
+
+
+}
+
+:global {
+  #workbenchPageContent, .CanvasComponent.LCS .CanvasZone {
+    max-width: 100% !important;
+  } 
+  .ant-table {
+    border: 1px solid #d9d9d9;
+
+    .ant-table-thead > tr > th {
+      background-color: #1964af;
+      color: #e6d11f;
+      font-weight: bold;
+
+      &:hover {
+        background-color: #155a9e;
+      }
+    }
+
+    .ant-table-tbody > tr > td {
+      color: #000;
+    }
+    .ant-modal-title {
+      background-color: #1964af;
+      color: #e6d11f;
+    }
+    .ant-modal-header {
+      background-color: #1964af;
+      color: #e6d11f;
+    }
+  }
+
+  .ant-input[disabled],
+  .ant-select-disabled .ant-select-selector {
+    color: #000 !important;
+    background-color: #f5f5f5 !important;
+    opacity: 1 !important;
+  }
+}
+
+
+.loadingSpinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px; /* Adjust height as needed */
+}
+

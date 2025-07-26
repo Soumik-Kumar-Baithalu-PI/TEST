@@ -1,0 +1,34 @@
+.sendButton{
+    background-color: #1964af;
+    color: #e6d11f;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+
+    &:hover {
+        background-color: #155a9e;
+    }
+}
+
+:global {
+  #workbenchPageContent, .CanvasComponent.LCS .CanvasZone {
+    max-width: 100% !important;
+  } 
+    .ant-modal-title {
+      background-color:#e6d11f ;
+      color:  #1964af;
+    }
+    // .ant-modal-header {
+    //   background-color: #1964af;
+    //   color: #e6d11f;
+    // }
+  
+
+  .ant-input[disabled],
+  .ant-select-disabled .ant-select-selector {
+    color: #000 !important;
+    background-color: #f5f5f5 !important;
+    opacity: 1 !important;
+  }
+}
